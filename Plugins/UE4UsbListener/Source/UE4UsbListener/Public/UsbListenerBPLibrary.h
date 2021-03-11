@@ -14,7 +14,12 @@ class UE4USBLISTENER_API UUsbListenerBPLibrary : public UBlueprintFunctionLibrar
 {
 	GENERATED_BODY()
 
-	// Convert FPortConfig to FString
-	UFUNCTION(BlueprintPure)
-	static FString ConvertPortConfigToString(int ComNumber);
+public:
+	// Start monitoring for USB device hotplugging
+	UFUNCTION(BlueprintCallable, Category = "UsbListener")
+	static void StartUsbListening();
+
+	// Stop monitoring
+	UFUNCTION(BlueprintCallable, Category = "UsbListener")
+	static void StopUsbListening();
 };
