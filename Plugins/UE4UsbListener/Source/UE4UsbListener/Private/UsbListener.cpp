@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <sstream>
 #include <regex>
+#include <initguid.h>
+#include <Usbiodef.h>
+#include <SetupAPI.h>
 #include "Windows/PostWindowsApi.h"
 
 std::shared_ptr<UsbListener> UsbListener::instance = nullptr;
@@ -81,7 +84,7 @@ int64_t UsbListener::HandleHotplugMessage(void* hwndPtr, uint32_t uint, uint64_t
 		{
 			if (usbDeviceChangeCallback != nullptr)
 			{
-				UE_LOG(UE4UsbListener, Warning, TEXT("HandleHotplugMessage: WM_DEVICECHANGE: %s"), name);
+				UE_LOG(UE4UsbListener, Verbose, TEXT("HandleHotplugMessage: WM_DEVICECHANGE: %s"), name);
 				usbDeviceChangeCallback(mystring, wparam == DBT_DEVICEARRIVAL);
 			}
 		}
@@ -112,12 +115,50 @@ void UsbListener::SetDeviceChangeCallback(UsbDeviceChangeCallback callback)
 	this->usbDeviceChangeCallback = callback;
 }
 
+void UsbListener::SetDeviceQueryCallback(UsbDeviceQueryCallback callback)
+{
+	this->usbDeviceQueryCallback = callback;
+}
+
 bool UsbListener::Start()
 {
 	UE_LOG(UE4UsbListener, Log, TEXT("Start"));
 	if (init)
 	{
 		return true;
+	}
+
+	// Query for the current attached USB devices
+	{
+		HDEVINFO devicesHandle = SetupDiGetClassDevsA(&GUID_DEVINTERFACE_USB_DEVICE, NULL, NULL, DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
+		SP_DEVINFO_DATA deviceInfo;
+		ZeroMemory(&deviceInfo, sizeof(SP_DEVINFO_DATA));
+		deviceInfo.cbSize = sizeof(SP_DEVINFO_DATA);
+		DWORD deviceNumber = 0;
+		SP_DEVICE_INTERFACE_DATA devinterfaceData;
+		devinterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+
+		while (SetupDiEnumDeviceInterfaces(devicesHandle, NULL, &GUID_DEVINTERFACE_USB_DEVICE, deviceNumber++, &devinterfaceData))
+		{
+			DWORD bufSize = 0;
+			SetupDiGetDeviceInterfaceDetail(devicesHandle, &devinterfaceData, NULL, NULL, &bufSize, NULL);
+			BYTE* buffer = new BYTE[bufSize];
+			PSP_DEVICE_INTERFACE_DETAIL_DATA devinterfaceDetailData = (PSP_DEVICE_INTERFACE_DETAIL_DATA)buffer;
+			devinterfaceDetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_W);
+			SetupDiGetDeviceInterfaceDetail(devicesHandle, &devinterfaceData, devinterfaceDetailData, bufSize, NULL, NULL);
+
+			if (usbDeviceQueryCallback != nullptr)
+			{
+				// God damn it! https://stackoverflow.com/a/27512342/1415058
+				wchar_t* name = (wchar_t*)devinterfaceDetailData->DevicePath;
+				std::string mystring;
+				while (*name)
+					mystring += (char)*name++;
+
+				UE_LOG(UE4UsbListener, Verbose, TEXT("UsbListener::Start: device: %s"), name);
+				usbDeviceQueryCallback(mystring);
+			}
+		}
 	}
 
 	HWND windowHandle = GetWindowHandle();

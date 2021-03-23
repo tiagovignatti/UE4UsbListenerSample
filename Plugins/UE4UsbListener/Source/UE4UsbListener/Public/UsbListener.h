@@ -10,12 +10,14 @@ class UE4USBLISTENER_API UsbListener : public IWindowsMessageHandler
 {
 public:
 	typedef std::function<void(const std::string& deviceName, bool plugOn)> UsbDeviceChangeCallback;
+	typedef std::function<void(const std::string& deviceName)> UsbDeviceQueryCallback;
 private:
 	static std::shared_ptr<UsbListener> instance;
 	static std::mutex instanceMutex;
 protected:
 	bool init;
 	UsbDeviceChangeCallback usbDeviceChangeCallback;
+	UsbDeviceQueryCallback usbDeviceQueryCallback;
 
 	UsbListener();
 	UsbListener(const UsbListener&) = delete;
@@ -23,6 +25,7 @@ public:
 	static std::shared_ptr<UsbListener> GetInstance();
 	virtual ~UsbListener();
 	void SetDeviceChangeCallback(UsbDeviceChangeCallback callback);
+	void SetDeviceQueryCallback(UsbDeviceQueryCallback callback);
 	virtual bool Start();
 	virtual void Stop();
 	int64_t HandleHotplugMessage(void* hwndPtr, uint32_t uint, uint64_t wparam, int64_t lparam);
