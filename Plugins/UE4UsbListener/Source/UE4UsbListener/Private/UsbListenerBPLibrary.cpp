@@ -39,4 +39,5 @@ void UUsbListenerBPLibrary::StopUsbListening()
 {
 	auto listener = UsbListener::GetInstance();
 	listener->Stop();
+	listener = nullptr;
 }

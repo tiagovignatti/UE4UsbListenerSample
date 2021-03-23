@@ -12,6 +12,7 @@ public:
 	typedef std::function<void(const std::string& deviceName, bool plugOn)> UsbDeviceChangeCallback;
 	typedef std::function<void(const std::string& deviceName)> UsbDeviceQueryCallback;
 private:
+	HDEVNOTIFY dev_notify;
 	static std::shared_ptr<UsbListener> instance;
 	static std::mutex instanceMutex;
 protected:

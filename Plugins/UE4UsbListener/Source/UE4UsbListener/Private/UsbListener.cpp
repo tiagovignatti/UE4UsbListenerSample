@@ -32,6 +32,9 @@ UsbListener::~UsbListener()
 
 void UsbListener::Stop()
 {
+	UnregisterDeviceNotification(dev_notify);
+	dev_notify = nullptr;
+	init = false;
 }
 
 static const GUID UsbGuid =
@@ -122,7 +125,7 @@ void UsbListener::SetDeviceQueryCallback(UsbDeviceQueryCallback callback)
 
 bool UsbListener::Start()
 {
-	UE_LOG(UE4UsbListener, Log, TEXT("Start"));
+	UE_LOG(UE4UsbListener, Verbose, TEXT("Start"));
 	if (init)
 	{
 		return true;
@@ -172,7 +175,7 @@ bool UsbListener::Start()
 	ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
 	NotificationFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
 	NotificationFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-	HDEVNOTIFY dev_notify = RegisterDeviceNotification(windowHandle, &NotificationFilter,
+	dev_notify = RegisterDeviceNotification(windowHandle, &NotificationFilter,
 		DEVICE_NOTIFY_ALL_INTERFACE_CLASSES);
 	if (dev_notify == NULL)
 	{
