@@ -1,6 +1,8 @@
 #if PLATFORM_LINUX
 #include "UsbListenerLinux.h"
 
+#include <libudev.h>
+
 std::shared_ptr<UsbListenerLinux> UsbListenerLinux::instance = nullptr;
 std::mutex UsbListenerLinux::instanceMutex;
 
@@ -37,6 +39,13 @@ bool UsbListenerLinux::Start()
 	if (init)
 	{
 		return true;
+	}
+
+	// Create a new udev object
+	struct udev* udev = udev_new();
+	if (!udev) {
+		printf("Error while initialization!\n");
+		return EXIT_FAILURE;
 	}
 
 	init = true;
