@@ -4,6 +4,8 @@
 #include "UsbListenerBPLibrary.h"
 #if PLATFORM_WINDOWS
 #include "UsbListenerWindows.h"
+#elif PLATFORM_LINUX
+#include "UsbListenerLinux.h"
 #endif
 
 DEFINE_LOG_CATEGORY_STATIC(UE4UsbListener, Log, All);
