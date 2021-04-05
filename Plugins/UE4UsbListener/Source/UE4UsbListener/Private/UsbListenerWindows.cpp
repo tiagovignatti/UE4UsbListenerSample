@@ -1,4 +1,5 @@
-#include "UsbListener.h"
+#if PLATFORM_WINDOWS
+#include "UsbListenerWindows.h"
 
 #include "Windows/PreWindowsApi.h"
 #include <windows.h>
@@ -12,10 +13,10 @@
 #include <SetupAPI.h>
 #include "Windows/PostWindowsApi.h"
 
-std::shared_ptr<UsbListener> UsbListener::instance = nullptr;
-std::mutex UsbListener::instanceMutex;
+std::shared_ptr<UsbListenerWindows> UsbListenerWindows::instance = nullptr;
+std::mutex UsbListenerWindows::instanceMutex;
 
-UsbListener::UsbListener()
+UsbListenerWindows::UsbListenerWindows()
 {
 	init = false;
 
@@ -25,12 +26,12 @@ UsbListener::UsbListener()
 	WindowsApplication->AddMessageHandler(*this);
 }
 
-UsbListener::~UsbListener()
+UsbListenerWindows::~UsbListenerWindows()
 {
 	Stop();
 }
 
-void UsbListener::Stop()
+void UsbListenerWindows::Stop()
 {
 	UnregisterDeviceNotification(dev_notify);
 	dev_notify = nullptr;
@@ -55,7 +56,7 @@ bool DeviceIsValid(PDEV_BROADCAST_DEVICEINTERFACE_A lpdbv)
 	return isUsb;
 }
 
-int64_t UsbListener::HandleHotplugMessage(void* hwndPtr, uint32_t uint, uint64_t wparam, int64_t lparam)
+int64_t UsbListenerWindows::HandleHotplugMessage(void* hwndPtr, uint32_t uint, uint64_t wparam, int64_t lparam)
 {
 	switch (uint)
 	{
@@ -87,7 +88,7 @@ int64_t UsbListener::HandleHotplugMessage(void* hwndPtr, uint32_t uint, uint64_t
 		{
 			if (usbDeviceChangeCallback != nullptr)
 			{
-				UE_LOG(UE4UsbListener, Verbose, TEXT("HandleHotplugMessage: WM_DEVICECHANGE: %s"), name);
+				UE_LOG(UE4UsbListenerWindows, Verbose, TEXT("HandleHotplugMessage: WM_DEVICECHANGE: %s"), name);
 				usbDeviceChangeCallback(mystring, wparam == DBT_DEVICEARRIVAL);
 			}
 		}
@@ -113,19 +114,19 @@ HWND GetWindowHandle()
 	return hWnd;
 }
 
-void UsbListener::SetDeviceChangeCallback(UsbDeviceChangeCallback callback)
+void UsbListenerWindows::SetDeviceChangeCallback(UsbDeviceChangeCallback callback)
 {
 	this->usbDeviceChangeCallback = callback;
 }
 
-void UsbListener::SetDeviceQueryCallback(UsbDeviceQueryCallback callback)
+void UsbListenerWindows::SetDeviceQueryCallback(UsbDeviceQueryCallback callback)
 {
 	this->usbDeviceQueryCallback = callback;
 }
 
-bool UsbListener::Start()
+bool UsbListenerWindows::Start()
 {
-	UE_LOG(UE4UsbListener, Verbose, TEXT("Start"));
+	UE_LOG(UE4UsbListenerWindows, Verbose, TEXT("Start"));
 	if (init)
 	{
 		return true;
@@ -158,7 +159,7 @@ bool UsbListener::Start()
 				while (*name)
 					mystring += (char)*name++;
 
-				UE_LOG(UE4UsbListener, Verbose, TEXT("UsbListener::Start: device: %s"), name);
+				UE_LOG(UE4UsbListenerWindows, Verbose, TEXT("UsbListenerWindows::Start: device: %s"), name);
 				usbDeviceQueryCallback(mystring);
 			}
 		}
@@ -179,7 +180,7 @@ bool UsbListener::Start()
 		DEVICE_NOTIFY_ALL_INTERFACE_CLASSES);
 	if (dev_notify == NULL)
 	{
-		UE_LOG(UE4UsbListener, Error, TEXT("Could not register for device notifications!"));
+		UE_LOG(UE4UsbListenerWindows, Error, TEXT("Could not register for device notifications!"));
 	}
 
 	init = true;
@@ -187,21 +188,22 @@ bool UsbListener::Start()
 	return true;
 }
 
-std::shared_ptr<UsbListener> UsbListener::GetInstance()
+std::shared_ptr<UsbListenerWindows> UsbListenerWindows::GetInstance()
 {
 	std::lock_guard<std::mutex> lock(instanceMutex);
 	if (instance == nullptr)
 	{
-		instance = std::shared_ptr<UsbListener>(new UsbListener());
+		instance = std::shared_ptr<UsbListenerWindows>(new UsbListenerWindows());
 	}
 	return instance;
 }
 
-bool UsbListener::ProcessMessage(const HWND hwnd, const uint32 Msg, const WPARAM wParam, const LPARAM lParam, int32& OutResult)
+bool UsbListenerWindows::ProcessMessage(const HWND hwnd, const uint32 Msg, const WPARAM wParam, const LPARAM lParam, int32& OutResult)
 {
 	bool bHandled = false;
 
-	UsbListener::GetInstance()->HandleHotplugMessage(hwnd, Msg, wParam, lParam);
+	UsbListenerWindows::GetInstance()->HandleHotplugMessage(hwnd, Msg, wParam, lParam);
 
 	return bHandled;
 }
+#endif

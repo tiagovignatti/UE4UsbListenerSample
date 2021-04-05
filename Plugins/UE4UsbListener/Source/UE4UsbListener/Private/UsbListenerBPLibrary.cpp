@@ -2,8 +2,11 @@
 
 
 #include "UsbListenerBPLibrary.h"
+#if PLATFORM_WINDOWS
+#include "UsbListenerWindows.h"
+#endif
 
-#include "UsbListener.h"
+DEFINE_LOG_CATEGORY_STATIC(UE4UsbListener, Log, All);
 
 void Callback(const std::string& deviceName, bool plugOn)
 {
@@ -29,15 +32,19 @@ void DeviceQueryCallback(const std::string& deviceName)
 
 void UUsbListenerBPLibrary::StartUsbListening()
 {
-	auto listener = UsbListener::GetInstance();
+#if PLATFORM_WINDOWS
+	auto listener = UsbListenerWindows::GetInstance();
 	listener->SetDeviceQueryCallback(DeviceQueryCallback);
 	listener->SetDeviceChangeCallback(Callback);
 	listener->Start();
+#endif
 }
 
 void UUsbListenerBPLibrary::StopUsbListening()
 {
-	auto listener = UsbListener::GetInstance();
+#if PLATFORM_WINDOWS
+	auto listener = UsbListenerWindows::GetInstance();
 	listener->Stop();
 	listener = nullptr;
+#endif
 }
