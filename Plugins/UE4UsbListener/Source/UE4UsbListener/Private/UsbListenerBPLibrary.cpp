@@ -38,15 +38,19 @@ void UUsbListenerBPLibrary::StartUsbListening()
 	auto listener = UsbListenerWindows::GetInstance();
 	listener->SetDeviceQueryCallback(DeviceQueryCallback);
 	listener->SetDeviceChangeCallback(Callback);
-	listener->Start();
+#elif PLATFORM_LINUX
+	auto listener = UsbListenerLinux::GetInstance();
 #endif
+	listener->Start();
 }
 
 void UUsbListenerBPLibrary::StopUsbListening()
 {
 #if PLATFORM_WINDOWS
 	auto listener = UsbListenerWindows::GetInstance();
+#elif PLATFORM_LINUX
+	auto listener = UsbListenerLinux::GetInstance();
+#endif
 	listener->Stop();
 	listener = nullptr;
-#endif
 }

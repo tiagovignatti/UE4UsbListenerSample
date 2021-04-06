@@ -3,6 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Async/Future.h"
+
+DEFINE_LOG_CATEGORY_STATIC(UE4UsbListenerLinux, Log, All);
 
 class UE4USBLISTENER_API UsbListenerLinux
 {
@@ -10,8 +13,13 @@ public:
 	typedef std::function<void(const std::string& deviceName, bool plugOn)> UsbDeviceChangeCallback;
 	typedef std::function<void(const std::string& deviceName)> UsbDeviceQueryCallback;
 private:
+	void MonitorDevices(int signal_fd, struct udev* udev);
+
 	static std::shared_ptr<UsbListenerLinux> instance;
 	static std::mutex instanceMutex;
+
+	/** Unarchive task result */
+	TOptional<TFuture<void>> ListenerTask;
 protected:
 	bool init;
 	UsbDeviceChangeCallback usbDeviceChangeCallback;
@@ -27,6 +35,4 @@ public:
 	virtual bool Start();
 	virtual void Stop();
 };
-
-DEFINE_LOG_CATEGORY_STATIC(UE4UsbListenerLinux, Log, All);
 #endif
